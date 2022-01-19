@@ -7,18 +7,19 @@ namespace Checkers
         public int[,] board;
         // black - czarne pionki, white - białe pionki, -1 - białe pole (nie używane), 0 - puste czarne pole
         int black = 2, white = 1;
+        int blackQueen = 4, whiteQueen = 3; // damki w odpowiednich kolorach
         static int order = 0; // zmienna ktora bedzie okreslala kolejnosc gry, jesli order % 2 == 0 gra bialy w przeciwnym wypadku czarny,
                               // zmienna bedzie aktualizowana z kazdym poprawnym wywolaniem funkcji move - rozgrywke rozpoczynaja biale
         public Game() // konstruktor tworzacy plansze startowa, przy utworzeniu nowej instancji klasy
         {
-            this.board = new int[,]{{ -1,black,-1,black,-1,black,-1,black},
-                    { black,-1,black,-1,black,-1,black,-1},
-                    { -1,black,-1,black,-1,black,-1,black},
+            board = new int[,]{{ -1,0,-1,0,-1,black,-1,black},
+                    { 0,-1,white,-1,0,-1,0,-1},
+                    { -1,0,-1,black,-1,0,-1,black},
                     { 0,-1,0,-1,0,-1,0,-1 },
                     { -1,0,-1,0,-1,0,-1,0},
-                    { white,-1,white,-1,white,-1,white,-1},
-                    { -1,white,-1,white,-1,white,-1,white},
-                    { white,-1,white,-1,white,-1,white,-1},
+                    { 0,-1,0,-1,0,-1,white,-1},
+                    { -1,black,-1,0,-1,white,-1,white},
+                    { 0,-1,0,-1,0,-1,0,-1},
             };
         }
         public void DisplayBoard()
@@ -40,17 +41,17 @@ namespace Checkers
                     switch (board[i, j])
                     {
                         case -1:
-                            Console.Write("   |");
-                            break;
+                            Console.Write("   |"); break;
                         case 0:
-                            Console.Write("   |");
-                            break;
+                            Console.Write("   |"); break;
                         case 1: // white
-                            Console.Write(" ■ |");
-                            break;
+                            Console.Write(" ■ |"); break;
                         case 2: // black
-                            Console.Write(" O |"); // █
-                            break;
+                            Console.Write(" o |"); break;
+                        case 3: // whiteQueen
+                            Console.Write(" █ |"); break;
+                        case 4: // blackQueen
+                            Console.Write(" O |"); break;
                         default:
                             break;
                     }
@@ -67,12 +68,74 @@ namespace Checkers
             else pawn = black;
             try
             {
-                // wybor zlego pionka - zla kolejnosc
-                if ((board[i0,j0] == white && pawn == black) || (board[i0,j0] == black && pawn == white))
+                // WYBRANO MIEJSCE PUSTE
+                if (board[i0,j0] <= 0) { flag = 6; goto error; }
+                
+                // WYBOR ZLEGO PIONKA - ZLA KOLEJNOSC
+                else if ((pawn == white && board[i0,j0] != white && board[i0,j0] != whiteQueen) || (pawn == black && board[i0,j0] != black && board[i0, j0] != blackQueen))
                 {
                     flag = 1; goto error;
                 }
-                // bicie pojedyncze
+                
+                // WYBOR ZLEGO POLA DO PORUSZENIA SIE - ZAJETE LUB NIEUZYWANE W GRZE
+                else if (board[i,j] != 0)
+                {
+                    if (board[i,j] != -1) { flag = 3; goto error; }
+                    else { flag = 5; goto error; }
+                }
+                
+                // DAMKA
+                else if ((board[i0,j0] == whiteQueen) || (board[i0,j0] == blackQueen))
+                {
+                    if (Math.Abs(i - i0) == Math.Abs(j - j0))
+                    {
+                        int mv_i = 0, mv_j = 0; // zmienne okreslajace kierunek poruszania sie damki
+                        // 4 mozliwosci :
+
+                        if (i0 > i && j0 > j) { mv_i = -1; mv_j = -1; } // lewo gora // poruszamy sie zmniejszajac 'i' i zmniejszajac 'j'
+                        else if (i0 > i && j0 < j) { mv_i = -1; mv_j = 1; } // prawo gora // poruszamy sie zmniejszajac 'i' i zwiekszajac 'j'
+                        else if (i0 < i && j0 < j) { mv_i = 1; mv_j = 1; } // prawo dol // poruszamy sie zwiekszajac 'i' i zwiekszajac 'j'
+                        else if (i0 < i && j0 < j) { mv_i = 1; mv_j = -1; } // lewo dol // poruszamy sie zwiekszajac 'i' i zmniejszajac 'j'
+
+                        int k;
+                        for (k = 1; k < Math.Abs(i - i0) - 1; k++)
+                        {
+                            if (board[i0 + mv_i * k, j0 + mv_j * k] != 0) { flag = 2; goto error; } // sprawdzenie czy na drodze nie ma innego pionka
+                        }
+                        int opponent = board[i0 + mv_i * k, j0 + mv_j * k];
+
+                        // opponent to puste pole - wykonujemy zwykly ruch
+                        if (opponent == 0)
+                        {
+                            board[i, j] = board[i0, j0];
+                            board[i0, j0] = 0;
+                            order++;
+                            Console.WriteLine("damka bez bicia");
+                            Console.WriteLine($"{i0 + mv_i * k} - { j0 + mv_j * k}");
+                            Console.WriteLine($"{board[i0 + mv_i * k, j0 + mv_j * k]}");
+                        }
+                        else
+                        {
+                            // sprawdzenie czy w odpowiednim nie stoi czasem nasz wlasny pionek
+                            if ((board[i0, j0] == whiteQueen && opponent != black && opponent != blackQueen) || (board[i0, j0] == blackQueen && opponent != white && opponent != whiteQueen))
+                            {
+                                flag = 2; goto error;
+                            }
+                            // bicie
+                            board[i0 + mv_i * k, j0 + mv_j * k] = 0;
+                            board[i, j] = board[i0, j0];
+                            board[i0, j0] = 0;
+                            order++;
+                            Console.WriteLine("damka z biciem");
+                        }
+                    }
+                    else
+                    {
+                        flag = 2; goto error;
+                    }
+                }
+                
+                // POJEDYNCZE BICIE
                 else if ((Math.Abs(j0 - j) == 2) && ((pawn == white && i0 - i == 2) || (pawn == black && i - i0 == 2)))
                 {
                     if (board[i, j] == 0)
@@ -82,39 +145,45 @@ namespace Checkers
                         else if (pawn == white && j < j0) { mv_i = -1; mv_j = -1; }
                         else if (pawn == black && j > j0) { mv_i = 1; mv_j = 1; }
                         else if (pawn == black && j < j0) { mv_i = 1; mv_j = -1; }
-                        
-                        if (mv_i != 0)
+
+                        int opponent = board[i0 + mv_i, j0 + mv_j];
+                        // sprawdzenie czy na pewno przeciwnik znajduje sie w dobrym miejscu
+                        if ((pawn == white && (opponent == black || opponent == blackQueen)) || (pawn == black && (opponent == white || opponent == whiteQueen)))
                         {
                             board[i0 + mv_i, j0 + mv_j] = 0; // usuwanie atakowanego pionka
                             board[i, j] = board[i0, j0];
                             board[i0, j0] = 0;
                             order++;
+                            if (pawn == white && i == 0) board[i, j] = whiteQueen;
+                            else if (pawn == black && i == 7) board[i, j] = blackQueen;
+                            Console.WriteLine("bicie pionkiem");
                         }
                         else
                         {
                             flag = 2; goto error;
                         }
-                        
                     }
                     else
                     {
                         flag = 2; goto error;
                     }
                 }
-                // sprawdzenie normalnego ruchu do przodu -> diagonalnie o jedno pole
+                
+                // SPRAWDZENIE POPRAWNOSCI RUCHU NORMALNEGO TJ. DIAGONALNIE I DO PRZODU
                 else if ((pawn == white && i0 - i != 1) || (pawn == black && i - i0 != 1) || Math.Abs(j0 - j) != 1)
                 {
                     flag = 2; goto error;
                 }
-                else if (board[i, j] == 0) // można wykonać ruch tylko w wolne miejsce
+               
+                // ZWYKŁY RUCH
+                else
                 {
                     board[i, j] = board[i0, j0];
                     board[i0, j0] = 0;
                     order++;
-                }
-                else
-                {
-                    flag = 3; goto error;
+                    if (pawn == white && i == 0) board[i, j] = whiteQueen;
+                    else if (pawn == black && i == 7) board[i, j] = blackQueen;
+                    Console.WriteLine("zwykly ruch");
                 }
             }
             catch
@@ -123,16 +192,18 @@ namespace Checkers
             }
 
         error:
-            if (flag == 1) 
+            if (flag == 1)
             {
                 string name;
                 if (pawn == white) name = "białych";
                 else name = "czarnych";
                 Console.WriteLine($"Teraz kolej {name}! Spróbuj ponownie...\n");
-            } 
+            }
             else if (flag == 2) Console.WriteLine("Niepoprawny ruch! Spróbuj ponownie...");
             else if (flag == 3) Console.WriteLine("Wybrane pole jest zajęte! Spróbuj ponownie...");
             else if (flag == 4) Console.WriteLine("Wyjście poza zakres planszy! Spróbuj ponownie...");
+            else if (flag == 5) Console.WriteLine("Nie można wybrać tego pola! Spróbuj ponownie...");
+            else if (flag == 6) Console.WriteLine("Na wybranym miejscu nie ma pionka! Spróbuj ponownie...");
         }
         public bool IsFinished()
         {
@@ -152,7 +223,6 @@ namespace Checkers
             Console.WriteLine($"Koniec gry! Wygrywają pionki {name}.");
             return true;
         }
-        public void Capture() {}
     }
     class Program
     {
@@ -160,8 +230,8 @@ namespace Checkers
         {
             Game game = new Game();
             int i0, j0, i, j;
-            Console.WriteLine("            ■ - pionki białe.");
-            Console.WriteLine("            O - pionki czarne.\n");
+            Console.WriteLine("   ■ - pionki białe. █ - biała damka.");
+            Console.WriteLine("   o - pionki czarne. O - czarna damka\n");
             while (!game.IsFinished())
             {
                 game.DisplayBoard();
