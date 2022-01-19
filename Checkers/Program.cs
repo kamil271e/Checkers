@@ -23,43 +23,41 @@ namespace Checkers
         }
         public void DisplayBoard()
         {
+            string name;
+            if (order % 2 == 0) name = "białych";
+            else name = "czarnych";
+            Console.WriteLine($"              Ruch {name}.");
             for (int i = 0; i < 8; i++)
             {
                 if (i == 0)
                 {
-                    Console.WriteLine("\n   12345678 ");
-                    Console.WriteLine("   ________ ");
-
+                    Console.WriteLine("\n     | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | ");
+                    Console.WriteLine("      ________________________________");
                 }
                 for (int j = 0; j < 8; j++)
                 {
-                    if (j == 0) Console.Write($"{i + 1} |");
+                    if (j == 0) Console.Write($"  {i + 1}  |");
                     switch (board[i, j])
                     {
                         case -1:
-                            if (i == 7) Console.Write("_");
-                            else Console.Write(" ");
+                            Console.Write("   |");
                             break;
                         case 0:
-                            if (i == 7) Console.Write("_");
-                            else Console.Write(" ");
+                            Console.Write("   |");
                             break;
                         case 1: // white
-                            Console.Write("■");
+                            Console.Write(" ■ |");
                             break;
                         case 2: // black
-                            Console.Write("O"); // █
+                            Console.Write(" O |"); // █
                             break;
                         default:
                             break;
                     }
-                    if (j == 7) Console.Write($"| {i + 1}");
-                   // Console.WriteLine("   ________ ");
                 }
                 Console.WriteLine();
-                
+                Console.WriteLine("   --|-------------------------------|");
             }
-            Console.WriteLine("\n   12345678 \n\n");
         }
         public void Move(int i0, int j0, int i, int j) // (i0,j0) wspolrzedne wybranego pionka, (i,j) wspolrzedne docelowe
         {
@@ -132,9 +130,9 @@ namespace Checkers
                 else name = "czarnych";
                 Console.WriteLine($"Teraz kolej {name}! Spróbuj ponownie...\n");
             } 
-            else if (flag == 2) Console.WriteLine("Niepoprawny ruch! Spróbuj ponownie...\n\n");
-            else if (flag == 3) Console.WriteLine("Wybrane pole jest zajęte! Spróbuj ponownie...\n\n");
-            else if (flag == 4) Console.WriteLine("Wyjście poza zakres planszy! Spróbuj ponownie...\n\n");
+            else if (flag == 2) Console.WriteLine("Niepoprawny ruch! Spróbuj ponownie...");
+            else if (flag == 3) Console.WriteLine("Wybrane pole jest zajęte! Spróbuj ponownie...");
+            else if (flag == 4) Console.WriteLine("Wyjście poza zakres planszy! Spróbuj ponownie...");
         }
         public bool IsFinished()
         {
@@ -162,22 +160,26 @@ namespace Checkers
         {
             Game game = new Game();
             int i0, j0, i, j;
+            Console.WriteLine("            ■ - pionki białe.");
+            Console.WriteLine("            O - pionki czarne.\n");
             while (!game.IsFinished())
             {
                 game.DisplayBoard();
                 try
                 {
-                    Console.WriteLine("Wybierz pionek, którym chcesz się poruszyć.\n");
+                    Console.WriteLine("\nWybierz pionek, którym chcesz się poruszyć.\n");
                     Console.Write("Numer wiersza:\n> "); i0 = Convert.ToInt32(Console.ReadLine());
                     Console.Write("Numer kolumny:\n> "); j0 = Convert.ToInt32(Console.ReadLine());
                     Console.WriteLine("Wybierz pole, na które chcesz przesunąć wybrany pionek.\n");
                     Console.Write("Numer wiersza:\n> "); i = Convert.ToInt32(Console.ReadLine());
                     Console.Write("Numer kolumny:\n> "); j = Convert.ToInt32(Console.ReadLine());
+                    Console.Clear();
                     game.Move(i0 - 1, j0 - 1, i - 1, j - 1);
                 }
                 catch
                 {
-                    Console.WriteLine("Złe dane wejściowe! Spróbuj ponownie...\n\n");
+                    Console.Clear();
+                    Console.WriteLine("Złe dane wejściowe! Spróbuj ponownie...");
                 }// charmap
 
             }
