@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Checkers
 {
@@ -8,18 +11,20 @@ namespace Checkers
         // black - czarne pionki, white - białe pionki, -1 - białe pole (nie używane), 0 - puste czarne pole
         int black = 2, white = 1;
         int blackQueen = 4, whiteQueen = 3; // damki w odpowiednich kolorach
+        public int[] whitePawns = { 1, 3 };
+        public int[] blackPawns = { 2, 4 };
         int pawn; // aktualnie wybrany pionek
         static int order = 0; // zmienna ktora bedzie okreslala kolejnosc gry, jesli order % 2 == 0 gra bialy w przeciwnym wypadku czarny,
-                              // zmienna bedzie aktualizowana z kazdym poprawnym wywolaniem funkcji move - rozgrywke rozpoczynaja biale
+                              // zmienna bedzie aktualizowana z kazdym poprawnym wywolaniem funkcji move - po kazdym wykonanym ruchu
         public Game() // konstruktor tworzacy plansze startowa, przy utworzeniu nowej instancji klasy
         {
-            board = new int[,]{{ -1,0,-1,0,-1,black,-1,black},
-                    { 0,-1,white,-1,0,-1,0,-1},
-                    { -1,0,-1,black,-1,0,-1,black},
-                    { 0,-1,0,-1,0,-1,0,-1 },
-                    { -1,0,-1,0,-1,0,-1,0},
-                    { 0,-1,0,-1,0,-1,white,-1},
-                    { -1,black,-1,0,-1,white,-1,white},
+            board = new int[,]{{ -1,whiteQueen,-1,0,-1,black,-1,black},
+                    { 0,-1,0,-1,0,-1,0,-1},
+                    { -1,black,-1,0,-1,black,-1,black},
+                    { black,-1,black,-1,black,-1,black,-1 },
+                    { -1,white,-1,white,-1,white,-1,0},
+                    { 0,-1,0,-1,0,-1,0,-1},
+                    { -1,white,-1,white,-1,white,-1,0},
                     { 0,-1,0,-1,0,-1,0,-1},
             };
         }
@@ -72,18 +77,86 @@ namespace Checkers
                 if (board[i0,j0] <= 0) { flag = 6; goto error; }
                 
                 // WYBOR ZLEGO PIONKA - ZLA KOLEJNOSC
-                else if ((pawn == white && board[i0,j0] != white && board[i0,j0] != whiteQueen) || (pawn == black && board[i0,j0] != black && board[i0, j0] != blackQueen))
+                else if ((pawn == white && !whitePawns.Contains(board[i0, j0])) || (pawn == black && !blackPawns.Contains(board[i0, j0])))
                 {
                     flag = 1; goto error;
                 }
                 
                 // WYBOR ZLEGO POLA DOCELOWEGO - ZAJETE LUB NIEUZYWANE W GRZE
-                else if (board[i,j] != 0)
+                else if (board[i, j] != 0)
                 {
                     if (board[i,j] != -1) { flag = 3; goto error; }
                     else { flag = 5; goto error; }
                 }
-                
+
+                // PODWOJNE BICIE
+                else if (Math.Abs(i0 - i) == 4 && (Math.Abs(j0 - j) == 0 || Math.Abs(j0 - j) == 4))
+                {
+                    List<int> mvs = new List<int>();
+                    if (j0 == j) { mvs.Add(1); mvs.Add(-1); }
+                    else if (j0 < j) { mvs.Add(1); }
+                    else { mvs.Add(-1); }
+                    
+                    if (pawn == white)
+                    {
+                        if (i0 < i) { flag = 2; goto error; }
+
+                        foreach (int mv in mvs){
+                            try // aby nie wyjsc poza zakres planszy przy sprawdzaniu pól
+                            {
+                                if (blackPawns.Contains(board[i0 - 1, j0 + mv]) && flag != -1) 
+                                {
+                                    if (board[i0 - 2, j0 + 2 * mv] == 0) 
+                                    {
+                                        if (blackPawns.Contains(board[i0 - 3, j0 + 3 * mv]) && j == j0 + 4 * mv) // kierunek ten sam
+                                        {
+                                            Capture(i0, j0, i0 - 2, j0 + 2 * mv, i0 - 1, j0 + mv); order--;
+                                            Capture(i0 - 2, j0 + 2 * mv, i0 - 4, j0 + 4 * mv, i0 - 3, j0 + 3 * mv);
+                                            flag = -1;
+                                        }
+                                        else if (blackPawns.Contains(board[i0 - 3, j0 + mv]) & j == j0) // zmiana kierunku bicia
+                                        {
+                                            Capture(i0, j0, i0 - 2, j0 + 2 * mv, i0 - 1, j0 + mv); order--; // aby nie inkrementowac order 2 razy
+                                            Capture(i0 - 2, j0 + 2 * mv, i0 - 4, j0, i0 - 3, j0 + mv);
+                                            flag = -1;
+                                        }
+                                    }
+                                }
+                            }
+                            catch {  }
+                        }
+                    }
+                    else
+                    {
+                        if (i0 > i) { flag = 2; goto error; }
+                        foreach (int mv in mvs)
+                        {
+                            try // aby nie wyjsc poza zakres planszy przy sprawdzaniu pól
+                            {
+                                if (whitePawns.Contains(board[i0 + 1, j0 + mv]) && flag != -1)
+                                {
+                                    if (board[i0 + 2, j0 + 2 * mv] == 0)
+                                    {
+                                        if (whitePawns.Contains(board[i0 + 3, j0 + 3 * mv]) && j == j0 + 4 * mv) // kierunek ten sam
+                                        {
+                                             Capture(i0, j0, i0 + 2, j0 + 2 * mv, i0 + 1, j0 + mv); order--;
+                                             Capture(i0 + 2, j0 + 2 * mv, i0 + 4, j0 + 4 * mv, i0 + 3, j0 + 3 * mv);
+                                             flag = -1;
+                                        }
+                                        else if (whitePawns.Contains(board[i0 + 3, j0 + mv]) && j == j0) // zmiana kierunku bicia
+                                        {
+                                            Capture(i0, j0, i0 + 2, j0 + 2 * mv, i0 + 1, j0 + mv); order--; // aby nie inkrementowac order 2 razy
+                                            Capture(i0 + 2, j0 + 2 * mv, i0 + 4, j0, i0 + 3, j0 + mv);
+                                            flag = -1;
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+
                 // DAMKA
                 else if ((board[i0,j0] == whiteQueen) || (board[i0,j0] == blackQueen))
                 {
@@ -121,12 +194,6 @@ namespace Checkers
                     }
                 }
                 
-                // PODWOJNE BICIE
-                else if (Math.Abs(i0-i) == 4 && (Math.Abs(j0-j) == 0 || Math.Abs(j0-j) == 4))
-                {
-                    //
-                }
-                
                 // POJEDYNCZE BICIE
                 else if ((Math.Abs(j0 - j) == 2) && ((pawn == white && i0 - i == 2) || (pawn == black && i - i0 == 2)))
                 {
@@ -135,11 +202,9 @@ namespace Checkers
 
                     int opponent = board[i0 + mv_i, j0 + mv_j];
                     // sprawdzenie czy na pewno przeciwnik znajduje sie w dobrym miejscu
-                    if ((pawn == white && (opponent == black || opponent == blackQueen)) || (pawn == black && (opponent == white || opponent == whiteQueen)))
+                    if ((pawn == white && blackPawns.Contains(opponent)) || (pawn == black && whitePawns.Contains(opponent)))
                     {
                         Capture(i0, j0, i, j, i0 + mv_i, j0 + mv_j);
-                        if (pawn == white && i == 0) board[i, j] = whiteQueen;
-                        else if (pawn == black && i == 7) board[i, j] = blackQueen;
                     }
                     else
                     {
@@ -157,8 +222,6 @@ namespace Checkers
                 else
                 {
                     Capture(i0, j0, i, j, -1, -1);
-                    if (pawn == white && i == 0) board[i, j] = whiteQueen;
-                    else if (pawn == black && i == 7) board[i, j] = blackQueen;
                 }
             }
             catch
@@ -220,6 +283,8 @@ namespace Checkers
             board[i, j] = board[i0, j0];
             board[i0, j0] = 0;
             order++;
+            if (pawn == white && i == 0) board[i, j] = whiteQueen;
+            else if (pawn == black && i == 7) board[i, j] = blackQueen;
         }
     }
     class Program
