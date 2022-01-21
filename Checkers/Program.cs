@@ -13,16 +13,17 @@ namespace Checkers
         int blackQueen = 4, whiteQueen = 3; // damki w odpowiednich kolorach
         public int[] whitePawns = { 1, 3 };
         public int[] blackPawns = { 2, 4 };
+        public int[] queens = { 4, 3 };
         int pawn; // aktualnie wybrany pionek
         static int order = 0; // zmienna ktora bedzie okreslala kolejnosc gry, jesli order % 2 == 0 gra bialy w przeciwnym wypadku czarny,
                               // zmienna bedzie aktualizowana z kazdym poprawnym wywolaniem funkcji move - po kazdym wykonanym ruchu
         public Game() // konstruktor tworzacy plansze startowa, przy utworzeniu nowej instancji klasy
         {
-            board = new int[,]{{ -1,whiteQueen,-1,0,-1,black,-1,black},
-                    { 0,-1,0,-1,0,-1,0,-1},
-                    { -1,black,-1,0,-1,black,-1,black},
+            board = new int[,]{{ -1,whiteQueen,-1,0,-1,0,-1,0},
+                    { 0,-1,black,-1,black,-1,black,-1},
+                    { -1,0,-1,0,-1,0,-1,0},
                     { black,-1,black,-1,black,-1,black,-1 },
-                    { -1,white,-1,white,-1,white,-1,0},
+                    { -1,0,-1,whiteQueen,-1,0,-1,whiteQueen},
                     { 0,-1,0,-1,0,-1,0,-1},
                     { -1,white,-1,white,-1,white,-1,0},
                     { 0,-1,0,-1,0,-1,0,-1},
@@ -74,7 +75,7 @@ namespace Checkers
             try
             {
                 // WYBRANO MIEJSCE PUSTE
-                if (board[i0,j0] <= 0) { flag = 6; goto error; }
+                if (board[i0, j0] <= 0) { flag = 6; goto error; }
                 
                 // WYBOR ZLEGO PIONKA - ZLA KOLEJNOSC
                 else if ((pawn == white && !whitePawns.Contains(board[i0, j0])) || (pawn == black && !blackPawns.Contains(board[i0, j0])))
@@ -92,62 +93,54 @@ namespace Checkers
                 // PODWOJNE BICIE
                 else if (Math.Abs(i0 - i) == 4 && (Math.Abs(j0 - j) == 0 || Math.Abs(j0 - j) == 4))
                 {
-                    List<int> mvs = new List<int>();
-                    if (j0 == j) { mvs.Add(1); mvs.Add(-1); }
-                    else if (j0 < j) { mvs.Add(1); }
-                    else { mvs.Add(-1); }
-                    
-                    if (pawn == white)
-                    {
-                        if (i0 < i) { flag = 2; goto error; }
+                    List<int> mvs_j = new List<int>();
+                    if (j0 == j) { mvs_j.Add(1); mvs_j.Add(-1); }
+                    else if (j0 < j) { mvs_j.Add(1); }
+                    else { mvs_j.Add(-1); }
 
-                        foreach (int mv in mvs){
-                            try // aby nie wyjsc poza zakres planszy przy sprawdzaniu pól
-                            {
-                                if (blackPawns.Contains(board[i0 - 1, j0 + mv]) && flag != -1) 
-                                {
-                                    if (board[i0 - 2, j0 + 2 * mv] == 0) 
-                                    {
-                                        if (blackPawns.Contains(board[i0 - 3, j0 + 3 * mv]) && j == j0 + 4 * mv) // kierunek ten sam
-                                        {
-                                            Capture(i0, j0, i0 - 2, j0 + 2 * mv, i0 - 1, j0 + mv); order--;
-                                            Capture(i0 - 2, j0 + 2 * mv, i0 - 4, j0 + 4 * mv, i0 - 3, j0 + 3 * mv);
-                                            flag = -1;
-                                        }
-                                        else if (blackPawns.Contains(board[i0 - 3, j0 + mv]) & j == j0) // zmiana kierunku bicia
-                                        {
-                                            Capture(i0, j0, i0 - 2, j0 + 2 * mv, i0 - 1, j0 + mv); order--; // aby nie inkrementowac order 2 razy
-                                            Capture(i0 - 2, j0 + 2 * mv, i0 - 4, j0, i0 - 3, j0 + mv);
-                                            flag = -1;
-                                        }
-                                    }
-                                }
-                            }
-                            catch {  }
-                        }
-                    }
-                    else
+                    List<int> mvs_i = new List<int>();
+                    if (queens.Contains(board[i0, j0]))
                     {
+                        mvs_i.Add(1); mvs_i.Add(-1); 
+                    }
+                    else if (pawn == white) 
+                    {
+                        mvs_i.Add(-1);
+                        if (i0 < i) { flag = 2; goto error; }
+                    } 
+                    else if (pawn == black)
+                    {
+                        mvs_i.Add(1);
                         if (i0 > i) { flag = 2; goto error; }
-                        foreach (int mv in mvs)
+                    }
+                    int opponent;
+                    foreach(int mv_i in mvs_i)
+                    {
+                        foreach (int mv_j in mvs_j)
                         {
                             try // aby nie wyjsc poza zakres planszy przy sprawdzaniu pól
                             {
-                                if (whitePawns.Contains(board[i0 + 1, j0 + mv]) && flag != -1)
+                                opponent = board[i0 + mv_i, j0 + mv_j]; // potencjalny pionek do zbicia
+                                if (((pawn == white && blackPawns.Contains(opponent)) || (pawn == black && whitePawns.Contains(opponent))) && flag != -1) // flaga wynoszaca -1 oznacza ze bicie zostalo juz wykonane
                                 {
-                                    if (board[i0 + 2, j0 + 2 * mv] == 0)
+                                    if (board[i0 + 2 * mv_i, j0 + 2 * mv_j] == 0)
                                     {
-                                        if (whitePawns.Contains(board[i0 + 3, j0 + 3 * mv]) && j == j0 + 4 * mv) // kierunek ten sam
+                                        opponent = board[i0 + 3 * mv_i, j0 + 3 * mv_j]; // drugi potencjalny pionek do zbicia
+                                        if (((pawn == white && blackPawns.Contains(opponent)) || (pawn == black && whitePawns.Contains(opponent))) && j == j0 + 4 * mv_j) // kierunek ten sam
                                         {
-                                             Capture(i0, j0, i0 + 2, j0 + 2 * mv, i0 + 1, j0 + mv); order--;
-                                             Capture(i0 + 2, j0 + 2 * mv, i0 + 4, j0 + 4 * mv, i0 + 3, j0 + 3 * mv);
-                                             flag = -1;
-                                        }
-                                        else if (whitePawns.Contains(board[i0 + 3, j0 + mv]) && j == j0) // zmiana kierunku bicia
-                                        {
-                                            Capture(i0, j0, i0 + 2, j0 + 2 * mv, i0 + 1, j0 + mv); order--; // aby nie inkrementowac order 2 razy
-                                            Capture(i0 + 2, j0 + 2 * mv, i0 + 4, j0, i0 + 3, j0 + mv);
+                                            Capture(i0, j0, i0 + 2 * mv_i, j0 + 2 * mv_j, i0 + mv_i, j0 + mv_j); order--;
+                                            Capture(i0 + 2 * mv_i, j0 + 2 * mv_j, i0 + 4 * mv_i, j0 + 4 * mv_j, i0 + 3 * mv_i, j0 + 3 * mv_j);
                                             flag = -1;
+                                        }
+                                        else
+                                        {
+                                            opponent = board[i0 + 3 * mv_i, j0 + mv_j];
+                                            if (((pawn == white && blackPawns.Contains(opponent)) || (pawn == black && whitePawns.Contains(opponent))) && j == j0) // zmiana kierunku bicia
+                                            {
+                                                Capture(i0, j0, i0 + 2 * mv_i, j0 + 2 * mv_j, i0 + mv_i, j0 + mv_j); order--; // aby nie inkrementowac order 2 razy
+                                                Capture(i0 + 2 * mv_i, j0 + 2 * mv_j, i0 + 4 * mv_i, j0, i0 + 3 * mv_i, j0 + mv_j);
+                                                flag = -1;
+                                            }
                                         }
                                     }
                                 }
@@ -155,6 +148,7 @@ namespace Checkers
                             catch { }
                         }
                     }
+                    
                 }
 
                 // DAMKA
@@ -313,8 +307,7 @@ namespace Checkers
                 {
                     Console.Clear();
                     Console.WriteLine("Złe dane wejściowe! Spróbuj ponownie...");
-                }// charmap
-
+                }
             }
         }
     }

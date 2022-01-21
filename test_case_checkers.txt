@@ -21,7 +21,7 @@ board = new int[,]{{ -1,black,-1,black,-1,black,-1,black},
 			
  board = new int[,]{{ -1,whiteQueen,-1,0,-1,black,-1,black},
                     { 0,-1,0,-1,0,-1,0,-1},
-                    { -1,black,-1,0,-1,black,-1,black},
+                    { -1,black,-1,black,-1,black,-1,black},
                     { 0,-1,0,-1,0,-1,0,-1 },
                     { -1,black,-1,black,-1,black,-1,0},
                     { white,-1,white,-1,white,-1,white,-1},
@@ -29,3 +29,22 @@ board = new int[,]{{ -1,black,-1,black,-1,black,-1,black},
                     { 0,-1,0,-1,0,-1,0,-1},
             };
 
+board = new int[,]{{ -1,whiteQueen,-1,0,-1,0,-1,black},
+                    { 0,-1,0,-1,black,-1,black,-1},
+                    { -1,black,-1,0,-1,black,-1,0},
+                    { black,-1,black,-1,black,-1,black,-1 },
+                    { -1,white,-1,white,-1,white,-1,0},
+                    { 0,-1,0,-1,0,-1,0,-1},
+                    { -1,white,-1,white,-1,white,-1,0},
+                    { 0,-1,0,-1,0,-1,0,-1},
+            };
+			
+board = new int[,]{{ -1,whiteQueen,-1,0,-1,0,-1,0},
+                    { 0,-1,black,-1,black,-1,black,-1},
+                    { -1,0,-1,0,-1,0,-1,0},
+                    { black,-1,black,-1,black,-1,black,-1 },
+                    { -1,white,-1,white,-1,white,-1,0},
+                    { 0,-1,0,-1,0,-1,0,-1},
+                    { -1,white,-1,white,-1,white,-1,0},
+                    { 0,-1,0,-1,0,-1,0,-1},
+            };
