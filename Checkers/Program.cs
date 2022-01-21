@@ -152,7 +152,7 @@ namespace Checkers
                 }
 
                 // DAMKA
-                else if ((board[i0,j0] == whiteQueen) || (board[i0,j0] == blackQueen))
+                else if (queens.Contains(board[i0, j0]))
                 {
                     if (Math.Abs(i - i0) == Math.Abs(j - j0))
                     {
@@ -174,7 +174,7 @@ namespace Checkers
                         else
                         {
                             // sprawdzenie czy w odpowiednim miejscu nie stoi czasem nasz wlasny pionek
-                            if ((board[i0, j0] == whiteQueen && opponent != black && opponent != blackQueen) || (board[i0, j0] == blackQueen && opponent != white && opponent != whiteQueen))
+                            if ((board[i0, j0] == whiteQueen && !blackPawns.Contains(opponent)) || (board[i0, j0] == blackQueen && !whitePawns.Contains(opponent)))
                             {
                                 flag = 2; goto error;
                             }
